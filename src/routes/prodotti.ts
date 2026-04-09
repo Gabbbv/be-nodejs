@@ -11,7 +11,7 @@ router.get('/', autenticaUtente, async (req: Request, res: Response) => {
 });
 
 router.get('/:id', autenticaUtente, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const prodotto = await prisma.prodotto.findUnique({
     where: { id_prodotto: id },
     include: { categoria: true, allergeni: true }
@@ -43,7 +43,7 @@ router.post('/', autenticaUtente, async (req: Request, res: Response) => {
 
 router.patch('/:id', autenticaUtente, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const utente = (req as any).utente;
     if (utente.type !== 'gestore') {
       return res.status(403).json({ detail: 'Solo i gestori possono aggiornare prodotti' });

@@ -14,7 +14,7 @@ export const autenticaUtente = async (req: Request, res: Response, next: NextFun
     return res.status(401).json({ detail: 'Not authenticated' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(' ')[1] as string;
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any;
     const userId = payload.sub;

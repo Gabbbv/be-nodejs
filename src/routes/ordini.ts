@@ -35,7 +35,7 @@ router.get('/', autenticaUtente, async (req: Request, res: Response) => {
 });
 
 router.get('/:id', autenticaUtente, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const utente = (req as any).utente;
 
   const ordine = await prisma.ordine.findUnique({
@@ -53,7 +53,7 @@ router.get('/:id', autenticaUtente, async (req: Request, res: Response) => {
 
 router.patch('/:id/stato', autenticaUtente, async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     const utente = (req as any).utente;
 
     if (utente.type !== 'gestore') {
