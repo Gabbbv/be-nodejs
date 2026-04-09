@@ -1,13 +1,179 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+}
+
+model Utente {
+  id_utente Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  password  String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(100)
+  nome      String   @db.VarChar(50)
+  cognome   String   @db.VarChar(50)
+  type      String   @db.VarChar(20)
+
+  // 1-1 Relations for polymorphic inheritance simulation
+  gestore Gestore?
+  cliente Cliente?
+
+  sessioni Sessione[]
+
+  @@map("utente")
+}
+
+model Gestore {
+  id_utente Int     @id
+  is_admin  Boolean @default(false)
+
+  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
+
+  calendari Calendario[]
+  annunci   Annuncio[]
+
+  @@map("gestore")
+}
+
+model Cliente {
+  id_utente      Int     @id
+  is_banned      Boolean @default(false)
+  punti_fidelity Int     @default(0)
+  classe         String? @db.VarChar(50)
+
+  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
+
+  buoni_sconto Buono_Sconto[]
+  ordini       Ordine[]
+
+  @@map("cliente")
+}
+
+model Categoria {
+  id_categoria Int        @id @default(autoincrement())
+  tipologia    String     @db.VarChar(100)
+  prodotti     Prodotto[]
+
+  @@map("categoria")
+}
+
+model Prodotto {
+  id_prodotto   Int     @id @default(autoincrement())
+  nome          String  @db.VarChar(100)
+  descrizione   String? @db.Text
+  specifiche    String? @db.Text
+  prezzo        Float
+  sconto        Float   @default(0.0)
+  quantita      Int     @default(0)
+  immagine_url  String? @db.VarChar(255)
+  rating_medio  Float   @default(0.0)
+  is_bundle     Boolean @default(false)
+
+  id_categoria Int?
+  categoria    Categoria? @relation(fields: [id_categoria], references: [id_categoria])
+
+  allergeni       ProdottoAllergene[]
+  dettagli_ordine Dettagli_Ordine[]
+
+  @@map("prodotto")
+}
+
+model Allergene {
+  id_allergene Int    @id @default(autoincrement())
+  allergene    String @db.VarChar(100)
+
+  prodotti ProdottoAllergene[]
+
+  @@map("allergene")
+}
+
+model ProdottoAllergene {
+  id_prodotto  Int
+  id_allergene Int
+
+  prodotto  Prodotto  @relation(fields: [id_prodotto], references: [id_prodotto], onDelete: Cascade)
+  allergene Allergene @relation(fields: [id_allergene], references: [id_allergene], onDelete: Cascade)
+
+  @@id([id_prodotto, id_allergene])
+  @@map("prodotto_allergene")
+}
+
+model Ordine {
+  id_ordine        Int       @id @default(autoincrement())
+  timestamp_ordine DateTime
+  stato            String    @default("in_attesa") @db.VarChar(50)
+  pin_ritiro       String?   @db.VarChar(20)
+  note             String?   @db.Text
+  orario_ritiro    DateTime?
+
+  id_cliente Int?
+  cliente    Cliente? @relation(fields: [id_cliente], references: [id_utente])
+
+  dettagli Dettagli_Ordine[]
+
+  @@map("ordine")
+}
+
+model Dettagli_Ordine {
+  id_dettagli     Int   @id @default(autoincrement())
+  quantita        Int
+  rating          Float?
+  sconto          Float @default(0.0)
+  prezzo_unitario Float
+
+  id_ordine   Int?
+  id_prodotto Int?
+
+  ordine   Ordine?   @relation(fields: [id_ordine], references: [id_ordine], onDelete: Cascade)
+  prodotto Prodotto? @relation(fields: [id_prodotto], references: [id_prodotto])
+
+  @@map("dettagli_ordine")
+}
+
+model Calendario {
+  id_calendario   Int      @id @default(autoincrement())
+  orario_apertura DateTime @db.Time
+  orario_chiusura DateTime @db.Time
+
+  id_gestore Int?
+  gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
+
+  @@map("calendario")
+}
+
+model Annuncio {
+  id_annuncio        Int       @id @default(autoincrement())
+  data_pubblicazione DateTime
+  titolo             String    @db.VarChar(255)
+  messaggio          String    @db.Text
+  scadenza           DateTime?
+
+  id_gestore Int?
+  gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
+
+  @@map("annuncio")
+}
+
+model Buono_Sconto {
+  id_buono Int   @id @default(autoincrement())
+  saldo    Float @default(0.0)
+
+  id_cliente Int?
+  cliente    Cliente? @relation(fields: [id_cliente], references: [id_utente])
+
+  @@map("buono_sconto")
+}
+
+model Sessione {
+  id_sessione    Int       @id @default(autoincrement())
+  id_utente      Int
+  token          String    @unique @db.VarChar(64)
+  data_creazione DateTime  @default(now())
+  data_scadenza  DateTime?
+  is_active      Boolean   @default(true)
+
+  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
+
+  @@map("token")
 }
