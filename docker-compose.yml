@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    environment:
+      - DATABASE_URL=mysql://root:123456@biagio:3306/whatsbar
+      - JWT_SECRET=supersecretkey
+      - PORT=8000
+    ports:
+     - "8000:8000"
