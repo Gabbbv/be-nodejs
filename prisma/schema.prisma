@@ -14,7 +14,6 @@ model Utente {
   email     String   @unique @db.VarChar(100)
   nome      String   @db.VarChar(50)
   cognome   String   @db.VarChar(50)
-  type      String   @db.VarChar(20)
 
   // 1-1 Relations for polymorphic inheritance simulation
   gestore Gestore?
@@ -22,7 +21,7 @@ model Utente {
 
   sessioni Sessione[]
 
-  @@map("utente")
+  @@map("Utente")
 }
 
 model Gestore {
@@ -34,7 +33,7 @@ model Gestore {
   calendari Calendario[]
   annunci   Annuncio[]
 
-  @@map("gestore")
+  @@map("Gestore")
 }
 
 model Cliente {
@@ -48,7 +47,7 @@ model Cliente {
   buoni_sconto Buono_Sconto[]
   ordini       Ordine[]
 
-  @@map("cliente")
+  @@map("Cliente")
 }
 
 model Categoria {
@@ -56,7 +55,7 @@ model Categoria {
   tipologia    String     @db.VarChar(100)
   prodotti     Prodotto[]
 
-  @@map("categoria")
+  @@map("Categoria")
 }
 
 model Prodotto {
@@ -77,7 +76,7 @@ model Prodotto {
   allergeni       ProdottoAllergene[]
   dettagli_ordine Dettagli_Ordine[]
 
-  @@map("prodotto")
+  @@map("Prodotto")
 }
 
 model Allergene {
@@ -86,7 +85,7 @@ model Allergene {
 
   prodotti ProdottoAllergene[]
 
-  @@map("allergene")
+  @@map("Allergene")
 }
 
 model ProdottoAllergene {
@@ -97,7 +96,7 @@ model ProdottoAllergene {
   allergene Allergene @relation(fields: [id_allergene], references: [id_allergene], onDelete: Cascade)
 
   @@id([id_prodotto, id_allergene])
-  @@map("prodotto_allergene")
+  @@map("Prodotto_Allergene")
 }
 
 model Ordine {
@@ -113,7 +112,7 @@ model Ordine {
 
   dettagli Dettagli_Ordine[]
 
-  @@map("ordine")
+  @@map("Ordine")
 }
 
 model Dettagli_Ordine {
@@ -129,7 +128,7 @@ model Dettagli_Ordine {
   ordine   Ordine?   @relation(fields: [id_ordine], references: [id_ordine], onDelete: Cascade)
   prodotto Prodotto? @relation(fields: [id_prodotto], references: [id_prodotto])
 
-  @@map("dettagli_ordine")
+  @@map("Dettagli_Ordine")
 }
 
 model Calendario {
@@ -140,7 +139,7 @@ model Calendario {
   id_gestore Int?
   gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
 
-  @@map("calendario")
+  @@map("Calendario")
 }
 
 model Annuncio {
@@ -153,7 +152,7 @@ model Annuncio {
   id_gestore Int?
   gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
 
-  @@map("annuncio")
+  @@map("Annuncio")
 }
 
 model Buono_Sconto {
@@ -163,7 +162,7 @@ model Buono_Sconto {
   id_cliente Int?
   cliente    Cliente? @relation(fields: [id_cliente], references: [id_utente])
 
-  @@map("buono_sconto")
+  @@map("Buono_Sconto")
 }
 
 model Sessione {
@@ -176,5 +175,5 @@ model Sessione {
 
   utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
 
-  @@map("token")
+  @@map("Token")
 }

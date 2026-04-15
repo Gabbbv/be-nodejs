@@ -50,7 +50,6 @@ router.post('/signup', async (req: Request, res: Response) => {
         password: hashedPassword,
         nome: data.nome,
         cognome: data.cognome,
-        type: 'cliente',
         cliente: {
           create: {
             classe: data.classe
@@ -77,7 +76,7 @@ router.patch('/profilo', autenticaUtente, async (req: Request, res: Response) =>
       include: { cliente: true } // Assuming only clientes update profile here
     });
 
-    if (!clienteDaAggiornare || clienteDaAggiornare.type !== 'cliente') {
+    if (!clienteDaAggiornare || !clienteDaAggiornare.cliente) {
       return res.status(404).json({ detail: 'Utente non trovato o non è un cliente' });
     }
 
