@@ -74,7 +74,7 @@ router.patch('/profilo', autenticaUtente, async (req: Request, res: Response) =>
 
     const clienteDaAggiornare = await prisma.utente.findUnique({
       where: { id_utente: authUtente.id_utente },
-      include: { cliente: true } // Assuming only clientes update profile here
+      include: { cliente: true }
     });
 
     if (!clienteDaAggiornare || !clienteDaAggiornare.cliente) {

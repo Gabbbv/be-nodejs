@@ -57,7 +57,6 @@ router.patch('/:id', autenticaUtente, async (req: Request, res: Response) => {
 
     return res.json(prodotto);
   } catch (error) {
-    // If not found or validation error
     return res.status(400).json(error);
   }
 });

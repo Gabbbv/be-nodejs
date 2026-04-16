@@ -9,7 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// API Routes mirroring FastAPI prefix
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/prodotti', prodottiRouter);
 app.use('/api/v1/ordini', ordiniRouter);
