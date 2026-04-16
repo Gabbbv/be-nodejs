@@ -8,44 +8,37 @@ datasource db {
 }
 
 model Utente {
-  id_utente Int      @id @default(autoincrement())
-  username  String   @unique @db.VarChar(50)
-  password  String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(100)
-  nome      String   @db.VarChar(50)
-  cognome   String   @db.VarChar(50)
-
-  // 1-1 Relations for polymorphic inheritance simulation
-  gestore Gestore?
-  cliente Cliente?
-
-  sessioni Sessione[]
+  id_utente Int        @id @default(autoincrement())
+  username  String     @unique(map: "username") @db.VarChar(50)
+  password  String     @db.VarChar(255)
+  email     String     @unique(map: "email") @db.VarChar(100)
+  nome      String     @db.VarChar(50)
+  cognome   String     @db.VarChar(50)
+  cliente   Cliente?
+  gestore   Gestore?
+  sessioni  Sessione[]
 
   @@map("Utente")
 }
 
 model Gestore {
-  id_utente Int     @id
-  is_admin  Boolean @default(false)
-
-  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
-
-  calendari Calendario[]
+  id_utente Int          @id
+  is_admin  Boolean?     @default(false)
   annunci   Annuncio[]
+  calendari Calendario[]
+  utente    Utente       @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Gestore_ibfk_1")
 
   @@map("Gestore")
 }
 
 model Cliente {
-  id_utente      Int     @id
-  is_banned      Boolean @default(false)
-  punti_fidelity Int     @default(0)
-  classe         String? @db.VarChar(50)
-
-  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
-
-  buoni_sconto Buono_Sconto[]
-  ordini       Ordine[]
+  id_utente      Int            @id
+  is_banned      Boolean?       @default(false)
+  punti_fidelity Int?           @default(0)
+  classe         String?        @db.VarChar(50)
+  buoni_sconto   Buono_Sconto[]
+  utente         Utente         @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Cliente_ibfk_1")
+  ordini         Ordine[]
 
   @@map("Cliente")
 }
@@ -59,31 +52,29 @@ model Categoria {
 }
 
 model Prodotto {
-  id_prodotto   Int     @id @default(autoincrement())
-  nome          String  @db.VarChar(100)
-  descrizione   String? @db.Text
-  specifiche    String? @db.Text
-  prezzo        Float
-  sconto        Float   @default(0.0)
-  quantita      Int     @default(0)
-  immagine_url  String? @db.VarChar(255)
-  rating_medio  Float   @default(0.0)
-  is_bundle     Boolean @default(false)
-
-  id_categoria Int?
-  categoria    Categoria? @relation(fields: [id_categoria], references: [id_categoria])
-
-  allergeni       ProdottoAllergene[]
+  id_prodotto     Int                 @id @default(autoincrement())
+  nome            String              @db.VarChar(100)
+  descrizione     String?             @db.Text
+  specifiche      String?             @db.Text
+  prezzo          Decimal             @db.Decimal(10, 2)
+  sconto          Decimal?            @default(0.00) @db.Decimal(5, 2)
+  quantita        Int                 @default(0)
+  immagine_url    String?             @db.VarChar(255)
+  rating_medio    Decimal?            @default(0.00) @db.Decimal(3, 2)
+  is_bundle       Boolean?            @default(false)
+  id_categoria    Int?
   dettagli_ordine Dettagli_Ordine[]
+  categoria       Categoria?          @relation(fields: [id_categoria], references: [id_categoria], onUpdate: Restrict, map: "Prodotto_ibfk_1")
+  allergeni       ProdottoAllergene[]
 
+  @@index([id_categoria], map: "id_categoria")
   @@map("Prodotto")
 }
 
 model Allergene {
-  id_allergene Int    @id @default(autoincrement())
-  allergene    String @db.VarChar(100)
-
-  prodotti ProdottoAllergene[]
+  id_allergene Int                 @id @default(autoincrement())
+  allergene    String              @db.VarChar(100)
+  prodotti     ProdottoAllergene[]
 
   @@map("Allergene")
 }
@@ -91,89 +82,86 @@ model Allergene {
 model ProdottoAllergene {
   id_prodotto  Int
   id_allergene Int
-
-  prodotto  Prodotto  @relation(fields: [id_prodotto], references: [id_prodotto], onDelete: Cascade)
-  allergene Allergene @relation(fields: [id_allergene], references: [id_allergene], onDelete: Cascade)
+  prodotto     Prodotto  @relation(fields: [id_prodotto], references: [id_prodotto], onDelete: Cascade, onUpdate: Restrict, map: "Prodotto_Allergene_ibfk_1")
+  allergene    Allergene @relation(fields: [id_allergene], references: [id_allergene], onDelete: Cascade, onUpdate: Restrict, map: "Prodotto_Allergene_ibfk_2")
 
   @@id([id_prodotto, id_allergene])
+  @@index([id_allergene], map: "id_allergene")
   @@map("Prodotto_Allergene")
 }
 
 model Ordine {
-  id_ordine        Int       @id @default(autoincrement())
-  timestamp_ordine DateTime
-  stato            String    @default("in_attesa") @db.VarChar(50)
-  pin_ritiro       String?   @db.VarChar(20)
-  note             String?   @db.Text
-  orario_ritiro    DateTime?
+  id_ordine        Int               @id @default(autoincrement())
+  timestamp_ordine DateTime?         @default(now()) @db.Timestamp(0)
+  stato            String            @db.VarChar(50)
+  pin_ritiro       String?           @db.VarChar(20)
+  note             String?           @db.Text
+  orario_ritiro    DateTime?         @db.Timestamp(0)
+  id_cliente       Int
+  dettagli         Dettagli_Ordine[]
+  cliente          Cliente           @relation(fields: [id_cliente], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Ordine_ibfk_1")
 
-  id_cliente Int?
-  cliente    Cliente? @relation(fields: [id_cliente], references: [id_utente])
-
-  dettagli Dettagli_Ordine[]
-
+  @@index([id_cliente], map: "id_cliente")
   @@map("Ordine")
 }
 
 model Dettagli_Ordine {
-  id_dettagli     Int   @id @default(autoincrement())
+  id_dettagli     Int      @id @default(autoincrement())
   quantita        Int
-  rating          Float?
-  sconto          Float @default(0.0)
-  prezzo_unitario Float
+  rating          Int?
+  sconto          Decimal? @default(0.00) @db.Decimal(10, 2)
+  prezzo_unitario Decimal  @db.Decimal(10, 2)
+  id_ordine       Int
+  id_prodotto     Int
+  ordine          Ordine   @relation(fields: [id_ordine], references: [id_ordine], onDelete: Cascade, onUpdate: Restrict, map: "Dettagli_Ordine_ibfk_1")
+  prodotto        Prodotto @relation(fields: [id_prodotto], references: [id_prodotto], onUpdate: Restrict, map: "Dettagli_Ordine_ibfk_2")
 
-  id_ordine   Int?
-  id_prodotto Int?
-
-  ordine   Ordine?   @relation(fields: [id_ordine], references: [id_ordine], onDelete: Cascade)
-  prodotto Prodotto? @relation(fields: [id_prodotto], references: [id_prodotto])
-
+  @@index([id_ordine], map: "id_ordine")
+  @@index([id_prodotto], map: "id_prodotto")
   @@map("Dettagli_Ordine")
 }
 
 model Calendario {
-  id_calendario   Int      @id @default(autoincrement())
-  orario_apertura DateTime @db.Time
-  orario_chiusura DateTime @db.Time
+  id_calendario   Int       @id @default(autoincrement())
+  orario_apertura DateTime? @db.Time(0)
+  orario_chiusura DateTime? @db.Time(0)
+  id_gestore      Int
+  gestore         Gestore   @relation(fields: [id_gestore], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Calendario_ibfk_1")
 
-  id_gestore Int?
-  gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
-
+  @@index([id_gestore], map: "id_gestore")
   @@map("Calendario")
 }
 
 model Annuncio {
   id_annuncio        Int       @id @default(autoincrement())
-  data_pubblicazione DateTime
-  titolo             String    @db.VarChar(255)
+  data_pubblicazione DateTime? @default(now()) @db.Timestamp(0)
+  titolo             String    @db.VarChar(150)
   messaggio          String    @db.Text
-  scadenza           DateTime?
+  scadenza           DateTime? @db.Timestamp(0)
+  id_gestore         Int
+  gestore            Gestore   @relation(fields: [id_gestore], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Annuncio_ibfk_1")
 
-  id_gestore Int?
-  gestore    Gestore? @relation(fields: [id_gestore], references: [id_utente])
-
+  @@index([id_gestore], map: "id_gestore")
   @@map("Annuncio")
 }
 
 model Buono_Sconto {
-  id_buono Int   @id @default(autoincrement())
-  saldo    Float @default(0.0)
+  id_buono   Int     @id @default(autoincrement())
+  saldo      Decimal @db.Decimal(10, 2)
+  id_cliente Int
+  cliente    Cliente @relation(fields: [id_cliente], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Buono_Sconto_ibfk_1")
 
-  id_cliente Int?
-  cliente    Cliente? @relation(fields: [id_cliente], references: [id_utente])
-
+  @@index([id_cliente], map: "id_cliente")
   @@map("Buono_Sconto")
 }
 
 model Sessione {
-  id_sessione    Int       @id @default(autoincrement())
   id_utente      Int
-  token          String    @unique @db.VarChar(64)
-  data_creazione DateTime  @default(now())
-  data_scadenza  DateTime?
-  is_active      Boolean   @default(true)
+  id_token       Int    @id @default(autoincrement())
+  token          String @db.VarChar(64)
+  data_creazione Int
+  utente         Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade, onUpdate: Restrict, map: "Token_ibfk_1")
 
-  utente Utente @relation(fields: [id_utente], references: [id_utente], onDelete: Cascade)
-
+  @@index([id_utente], map: "id_utente")
   @@map("Token")
 }

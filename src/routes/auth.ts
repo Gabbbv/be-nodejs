@@ -28,11 +28,12 @@ router.post('/login', async (req: Request, res: Response) => {
     const sessione = await prisma.sessione.create({
       data: {
         id_utente: utenteDb.id_utente,
-        token: token
+        token: token,
+        data_creazione: Math.floor(Date.now() / 1000)
       }
     });
 
-    return res.json({ id_sessione: sessione.id_sessione, token, id_utente: sessione.id_utente });
+    return res.json({ token, id_utente: sessione.id_utente });
   } catch (error) {
     return res.status(400).json(error);
   }

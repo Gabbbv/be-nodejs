@@ -1,11 +1,10 @@
-import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../db/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
-
 export const generaToken = (userId: number): string => {
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '1d' });
+  // Genera un token hex randomico lungo esattamente 64 caratteri (32 bytes * 2) per adattarsi a VarChar(64) nativamente
+  return crypto.randomBytes(32).toString('hex');
 };
 
 export const autenticaUtente = async (req: Request, res: Response, next: NextFunction) => {
@@ -16,30 +15,32 @@ export const autenticaUtente = async (req: Request, res: Response, next: NextFun
 
   const token = authHeader.split(' ')[1] as string;
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    const userId = payload.sub;
-
-    const utente = await prisma.utente.findUnique({
-      where: { id_utente: userId },
-    });
-
-    if (!utente) {
-      return res.status(401).json({ detail: 'Utente non trovato' });
-    }
-
-    // Check if there's an active session in db
-    const activeSession = await prisma.sessione.findUnique({
+    // Cerchiamo direttamente il token univoco nel Database reale, includendo le dipendenze per scoprire se l'utente è Gestore o Cliente
+    const activeSession = await prisma.sessione.findFirst({
       where: { token },
+      include: { 
+        utente: {
+          include: {
+            gestore: true,
+            cliente: true
+          }
+        } 
+      }
     });
 
-    if (!activeSession || !activeSession.is_active) {
-      return res.status(401).json({ detail: 'Sessione scaduta o invalida' });
+    if (!activeSession) {
+      return res.status(401).json({ detail: 'Sessione non trovata o invalida' });
     }
 
-    // Pass the user string to the req object
-    (req as any).utente = utente;
+    // Ricostruiamo la proprietà "type" in base alle relazioni trovate nel database
+    const utenteObj: any = activeSession.utente;
+    if (utenteObj.gestore) utenteObj.type = 'gestore';
+    else if (utenteObj.cliente) utenteObj.type = 'cliente';
+
+    // Pass the user object to the req object
+    (req as any).utente = utenteObj;
     next();
   } catch (error) {
-    return res.status(401).json({ detail: 'Token invalido o scaduto' });
+    return res.status(401).json({ detail: 'Token invalido o errore DB' });
   }
 };
